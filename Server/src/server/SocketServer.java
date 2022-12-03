@@ -6,45 +6,51 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class SocketServer implements Runnable{
+    public final static String width = String.valueOf((int) Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+    public final static String heigth = String.valueOf(Toolkit.getDefaultToolkit().getScreenSize().getHeight());
 
     public final static String IMAGE_TYPE_JPEG = "jpeg";    // non modifiable et pas besion d`instance pour les appelers
     public final static String IMAGE_TYPE_GIF = "gif";
     public final static String IMAGE_TYPE_PNG = "png";
 
     public int SOCKET_PORT;      // 1522
-    public String FILE_TO_SEND;  // C:\Users\Johan\Documents\Java\Naina\Remote Access\Server\ToSend\Ty le izy.txt
     Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
     BufferedImage capture;
     ServerSocket serverSocket;
     Socket client;
+    MouseAction mouseAction;
 
     public void setSOCKET_PORT(int SOCKET_PORT) {this.SOCKET_PORT = SOCKET_PORT;}
-    public void setFILE_TO_SEND(String FILE_TO_SEND) {this.FILE_TO_SEND = FILE_TO_SEND;}
+
     public void setCapture(BufferedImage capture) {this.capture = capture;}
+
     public void setServerSocket(ServerSocket serverSocket) {this.serverSocket = serverSocket;}
+
     public void setClient(Socket client) {this.client = client;}
 
+    public void setMouseAction(MouseAction mouseAction) {this.mouseAction = mouseAction;}
+
     public int getSOCKET_PORT() {return SOCKET_PORT;}
-    public String getFILE_TO_SEND() {return FILE_TO_SEND;}
+
     public BufferedImage getCapture() {return capture;}
+
     public ServerSocket getServerSocket() {return serverSocket;}
+
     public Socket getClient() {return client;}
 
-    public void screenShot(int port) throws IOException {
+    public void launc_Server(int port) throws IOException {
         this.setSOCKET_PORT(port);
         try {
-            this.setServerSocket(new ServerSocket(this.getSOCKET_PORT()));
-            this.setClient(this.getServerSocket().accept());
-//            Une fois
-            this.run();
+            this.setMouseAction(new MouseAction());                         // Mouse which does the action
+            this.setServerSocket(new ServerSocket(this.getSOCKET_PORT()));  // My port
+            this.setClient(this.getServerSocket().accept());                // Accept client
+            this.send_Screen_Resolution();                                  // My screen size
+            this.send_My_Screen();                                          // Envoie du capture a l` infinis
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -52,29 +58,47 @@ public class SocketServer implements Runnable{
         }
     }
 
-    @Override
-    public void run() {
+    public void send_Screen_Resolution(){
+        ObjectOutputStream oos = null;
+        try{
+            oos = new ObjectOutputStream(this.getClient().getOutputStream());
+            String message = this.width+"/"+this.heigth;
+            oos.flush();
+            oos.writeObject(message);
+            oos.flush();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    public void send_My_Screen(){
         try {
-            MouseAction mouseAction = new MouseAction();
             OutputStream outputStream = null;
             while (true) {
                 this.setCapture(new Robot().createScreenCapture(screenRect));
                 outputStream = client.getOutputStream();
                 ImageIO.write(this.getCapture(), this.IMAGE_TYPE_PNG, outputStream);
-
-//                if(client.getOutputStream() != null) {
-//                    ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
-//                    String message = (String) ois.readObject();
-//                    int[] bxywh = this.bxywh(message);
-////                System.out.println("Message:"+ message);
-////                System.out.println("Values:"+ this.x_position(bxywh));
-////                System.out.println("Values:"+ this.y_position(bxywh));
-//                    mouseAction.click(this.x_position(bxywh), this.y_position(bxywh), this.button(bxywh));
-//                }
-
-//                Envoyer le souris par un thread
-
                 outputStream.flush();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {                                                 // Au cas d`une reception de donnnes
+        try {
+            while (true) {
+                System.out.print("");
+                if (client != null && client.getInputStream() != null) {
+                    ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
+                    String message = (String) ois.readObject();
+                    System.out.println(message);
+                    int[] bxywh = this.bxywh(message);
+                    mouseAction.setX(this.x_position(bxywh));
+                    mouseAction.setY(this.y_position(bxywh));
+                    mouseAction.setButton(this.button(bxywh));
+                    new Thread(mouseAction).start();
+                }
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -94,7 +118,7 @@ public class SocketServer implements Runnable{
         return width*bxywh[1]/bxywh[3];
     }
     public int y_position(int[] bxywh){
-        int heigth = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth();
+        int heigth = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight();
         return heigth*bxywh[2]/bxywh[4];
     }
     public int button(int[] bxywh){

@@ -11,7 +11,10 @@ public class Main {
     public static void main(String[] args) throws Exception{
         SocketServer socketServer = new SocketServer();
         try {
-            socketServer.screenShot(1522);
+            Thread mouseAction = new Thread(socketServer);
+            mouseAction.start();                              // Au cas d`une action de Souris
+            socketServer.launc_Server(1522);
+
         } catch (IOException e) {
             e.printStackTrace();
         }

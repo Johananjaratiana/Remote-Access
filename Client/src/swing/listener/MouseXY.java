@@ -1,4 +1,4 @@
-package listener;
+package swing.listener;
 
 import client.ClientSocket;
 import swing.Fenetre;
@@ -21,7 +21,7 @@ public class MouseXY implements MouseListener, MouseMotionListener {
     @Override
     public void mouseClicked(MouseEvent e){
         String message = e.getButton() + "/" + e.getX() + "/" + e.getY();
-        message += "/"+Fenetre.width+"/"+Fenetre.heigth;
+        message += "/"+clientSocket.getServer_width()+"/"+clientSocket.getServer_heigth();
 
         this.getClientSocket().setMessage(message);
 

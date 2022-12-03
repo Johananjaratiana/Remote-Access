@@ -1,0 +1,6 @@
+
+
+----   ---------------         ----------------       Tache ---------------- ----------------    --------------
+1) Gestion d` arret .
+2) Un client qui se connect sur plusieur serveur .
+3) Liste de tout les serveur a qui on se connect
