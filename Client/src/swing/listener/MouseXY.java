@@ -1,7 +1,6 @@
 package swing.listener;
 
 import client.ClientSocket;
-import swing.Fenetre;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;

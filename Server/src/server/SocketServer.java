@@ -70,17 +70,22 @@ public class SocketServer implements Runnable{
             e.printStackTrace();
         }
     }
-    public void send_My_Screen(){
+    public void send_My_Screen() throws IOException {
         try {
             OutputStream outputStream = null;
+            Robot robot = new Robot();
             while (true) {
-                this.setCapture(new Robot().createScreenCapture(screenRect));
+                this.setCapture(robot.createScreenCapture(screenRect));
                 outputStream = client.getOutputStream();
+                outputStream.flush();
                 ImageIO.write(this.getCapture(), this.IMAGE_TYPE_PNG, outputStream);
                 outputStream.flush();
+                Thread.sleep(4);
             }
         }catch (Exception e){
-            e.printStackTrace();
+//            e.printStackTrace();
+            if(client.isClosed() == false)client.close();
+            return;
         }
     }
 
@@ -89,21 +94,31 @@ public class SocketServer implements Runnable{
         try {
             while (true) {
                 System.out.print("");
+                Thread thread = null;
                 if (client != null && client.getInputStream() != null) {
                     ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
                     String message = (String) ois.readObject();
-                    System.out.println(message);
+
                     int[] bxywh = this.bxywh(message);
                     mouseAction.setX(this.x_position(bxywh));
                     mouseAction.setY(this.y_position(bxywh));
                     mouseAction.setButton(this.button(bxywh));
-                    new Thread(mouseAction).start();
+                    thread = new Thread(mouseAction);
+                    thread.start();
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+            try {
+                if(client.isClosed() == false)client.close();               // deconnexion
+                return;
+            } catch (IOException ex) {
+            }
         }
     }
+
+
+
+
 //    [0] = Button {0,1,3}  //  [1,2] = (x,y){position}  //  [3,4] (w,h){width,height}
     public int[] bxywh(String mouseAction){
         String[] temp = mouseAction.split("/");

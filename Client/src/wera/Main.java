@@ -1,7 +1,6 @@
 package wera;
 
-import client.ClientSocket;
-import swing.Fenetre;
+import swing.frame.Fenetre;
 
 import java.io.IOException;
 

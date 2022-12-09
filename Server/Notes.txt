@@ -1,0 +1,2 @@
+//  1. InputStream Read data from the source once at a time.
+//  2. OutputStream Write Data to the destination once at a time
